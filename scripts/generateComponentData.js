@@ -7,18 +7,19 @@ var chokidar = require("chokidar");
 var paths = {
   examples: path.join(__dirname, "../src", "docs", "examples"),
   components: path.join(__dirname, "../src", "components"),
-  output: path.join(__dirname, "../src", "componentData.js")
+  output: path.join(__dirname, "../config", "componentData.js")
 };
 
 const enableWatchMode = process.argv.slice(2) == "--watch";
 if (enableWatchMode) {
-  // Regenerate component metadata
+  // Regenerate component metadata when components or examples change.
   chokidar
     .watch([paths.examples, paths.components])
     .on("change", function(event, path) {
       generate(paths);
     });
 } else {
+  // Generate component metadata
   generate(paths);
 }
 
@@ -65,6 +66,8 @@ function getExampleData(examplesPath, componentName) {
     var content = readFile(filePath);
     var info = parse(content);
     return {
+      // By convention, component name should match the filename.
+      // So remove the .js extension to get the component name.
       name: file.slice(0, -3),
       description: info.description,
       code: content
@@ -75,7 +78,7 @@ function getExampleData(examplesPath, componentName) {
 function getExampleFiles(examplesPath, componentName) {
   var exampleFiles = [];
   try {
-    exampleFiles = getExampleFiles(path.join(examplesPath, componentName));
+    exampleFiles = getFiles(path.join(examplesPath, componentName));
   } catch (error) {
     console.log(chalk.red(`No examples found for ${componentName}.`));
   }
@@ -102,6 +105,6 @@ function writeFile(filepath, content) {
   });
 }
 
-function readFile(filepath) {
-  return fs.readFileSync(filepath, "utf-8");
+function readFile(filePath) {
+  return fs.readFileSync(filePath, "utf-8");
 }
